@@ -55,7 +55,7 @@ class SentryTracer extends ISentrySpan {
   }
 
   @override
-  Future<void> finish({SpanStatus? status}) async {
+  Future<void> finish({SpanStatus? status, DateTime? endTimestamp}) async {
     _autoFinishAfterTimer?.cancel();
     _finishStatus = SentryTracerFinishStatus.finishing(status);
     if (!_rootSpan.finished &&
@@ -65,11 +65,13 @@ class SentryTracer extends ISentrySpan {
       // finish unfinished spans otherwise transaction gets dropped
       for (final span in _children) {
         if (!span.finished) {
-          await span.finish(status: SpanStatus.deadlineExceeded());
+          await span.finish(
+              status: SpanStatus.deadlineExceeded(),
+              endTimestamp: endTimestamp);
         }
       }
 
-      var _rootEndTimestamp = getUtcDateTime();
+      var _rootEndTimestamp = endTimestamp ?? getUtcDateTime();
       if (_trimEnd && children.isNotEmpty) {
         final childEndTimestamps = children
             .where((child) => child.endTimestamp != null)
@@ -165,11 +167,11 @@ class SentryTracer extends ISentrySpan {
         description: description);
 
     final child = SentrySpan(this, context, _hub,
-        sampled: _rootSpan.sampled,
-        startTimestamp: startTimestamp, finishedCallback: () {
+        sampled: _rootSpan.sampled, startTimestamp: startTimestamp,
+        finishedCallback: ({DateTime? endTimestamp}) {
       final finishStatus = _finishStatus;
       if (finishStatus.finishing) {
-        finish(status: finishStatus.status);
+        finish(status: finishStatus.status, endTimestamp: endTimestamp);
       }
     });
 
