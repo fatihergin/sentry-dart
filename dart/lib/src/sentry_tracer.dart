@@ -18,12 +18,15 @@ class SentryTracer extends ISentrySpan {
   var _finishStatus = SentryTracerFinishStatus.notFinishing();
 
   SentryTracer(SentryTransactionContext transactionContext, this._hub,
-      {bool waitForChildren = false, Duration? autoFinishAfter}) {
+      {DateTime? startTimestamp,
+      bool waitForChildren = false,
+      Duration? autoFinishAfter}) {
     _rootSpan = SentrySpan(
       this,
       transactionContext,
       _hub,
       sampled: transactionContext.sampled,
+      startTimestamp: startTimestamp,
     );
     _waitForChildren = waitForChildren;
     if (autoFinishAfter != null) {
@@ -102,21 +105,21 @@ class SentryTracer extends ISentrySpan {
   ISentrySpan startChild(
     String operation, {
     String? description,
+    DateTime? startTimestamp,
   }) {
     if (finished) {
       return NoOpSentrySpan();
     }
 
-    return _rootSpan.startChild(
-      operation,
-      description: description,
-    );
+    return _rootSpan.startChild(operation,
+        description: description, startTimestamp: startTimestamp);
   }
 
   ISentrySpan startChildWithParentSpanId(
     SpanId parentSpanId,
     String operation, {
     String? description,
+    DateTime? startTimestamp,
   }) {
     if (finished) {
       return NoOpSentrySpan();
@@ -128,8 +131,9 @@ class SentryTracer extends ISentrySpan {
         operation: operation,
         description: description);
 
-    final child = SentrySpan(this, context, _hub, sampled: _rootSpan.sampled,
-        finishedCallback: () {
+    final child = SentrySpan(this, context, _hub,
+        sampled: _rootSpan.sampled,
+        startTimestamp: startTimestamp, finishedCallback: () {
       final finishStatus = _finishStatus;
       if (finishStatus.finishing) {
         finish(status: finishStatus.status);

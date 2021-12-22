@@ -101,6 +101,7 @@ class HubAdapter implements Hub {
   ISentrySpan startTransactionWithContext(
     SentryTransactionContext transactionContext, {
     Map<String, dynamic>? customSamplingContext,
+    DateTime? startTimestamp,
     bool? bindToScope,
     bool? waitForChildren,
     Duration? autoFinishAfter,
@@ -108,6 +109,7 @@ class HubAdapter implements Hub {
       Sentry.startTransactionWithContext(
         transactionContext,
         customSamplingContext: customSamplingContext,
+        startTimestamp: startTimestamp,
         bindToScope: bindToScope,
         waitForChildren: waitForChildren,
         autoFinishAfter: autoFinishAfter,
@@ -118,6 +120,7 @@ class HubAdapter implements Hub {
     String name,
     String operation, {
     String? description,
+    DateTime? startTimestamp,
     bool? bindToScope,
     bool? waitForChildren,
     Duration? autoFinishAfter,
@@ -127,6 +130,7 @@ class HubAdapter implements Hub {
         name,
         operation,
         description: description,
+        startTimestamp: startTimestamp,
         bindToScope: bindToScope,
         waitForChildren: waitForChildren,
         autoFinishAfter: autoFinishAfter,

@@ -228,6 +228,7 @@ class Sentry {
     String name,
     String operation, {
     String? description,
+    DateTime? startTimestamp,
     bool? bindToScope,
     bool? waitForChildren,
     Duration? autoFinishAfter,
@@ -237,6 +238,7 @@ class Sentry {
         name,
         operation,
         description: description,
+        startTimestamp: startTimestamp,
         bindToScope: bindToScope,
         waitForChildren: waitForChildren,
         autoFinishAfter: autoFinishAfter,
@@ -247,6 +249,7 @@ class Sentry {
   static ISentrySpan startTransactionWithContext(
     SentryTransactionContext transactionContext, {
     Map<String, dynamic>? customSamplingContext,
+    DateTime? startTimestamp,
     bool? bindToScope,
     bool? waitForChildren,
     Duration? autoFinishAfter,
@@ -254,6 +257,7 @@ class Sentry {
       _hub.startTransactionWithContext(
         transactionContext,
         customSamplingContext: customSamplingContext,
+        startTimestamp: startTimestamp,
         bindToScope: bindToScope,
         waitForChildren: waitForChildren,
         autoFinishAfter: autoFinishAfter,
