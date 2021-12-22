@@ -10,7 +10,7 @@ import '../utils.dart';
 class SentrySpan extends ISentrySpan {
   final SentrySpanContext _context;
   DateTime? _timestamp;
-  final DateTime _startTimestamp = getUtcDateTime();
+  late final DateTime _startTimestamp;
   final Hub _hub;
 
   final SentryTracer _tracer;
@@ -28,9 +28,11 @@ class SentrySpan extends ISentrySpan {
     this._tracer,
     this._context,
     this._hub, {
+    DateTime? startTimestamp,
     bool? sampled,
     Function()? finishedCallback,
   }) {
+    _startTimestamp = startTimestamp?.toUtc() ?? getUtcDateTime();
     this.sampled = sampled;
     _finishedCallback = finishedCallback;
   }
@@ -94,8 +96,14 @@ class SentrySpan extends ISentrySpan {
   ISentrySpan startChild(
     String operation, {
     String? description,
+    DateTime? startTimestamp,
   }) {
     if (finished) {
+      return NoOpSentrySpan();
+    }
+
+    // if startTimestamp is before parent's startTimestamp, return no-op
+    if (startTimestamp?.isBefore(_startTimestamp) ?? false) {
       return NoOpSentrySpan();
     }
 
@@ -103,6 +111,7 @@ class SentrySpan extends ISentrySpan {
       _context.spanId,
       operation,
       description: description,
+      startTimestamp: startTimestamp,
     );
   }
 
