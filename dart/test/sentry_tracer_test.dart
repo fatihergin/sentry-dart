@@ -1,5 +1,6 @@
 import 'package:sentry/sentry.dart';
 import 'package:sentry/src/sentry_tracer.dart';
+import 'package:sentry/src/utils.dart';
 import 'package:test/test.dart';
 
 import 'mocks/mock_hub.dart';
@@ -32,6 +33,32 @@ void main() {
     final trace = tr.contexts.trace;
 
     expect(trace?.status.toString(), 'aborted');
+  });
+
+  test('tracer finishes with end timestamp', () async {
+    final sut = fixture.getSut();
+    final endTimestamp = getUtcDateTime();
+
+    await sut.finish(endTimestamp: endTimestamp);
+
+    expect(sut.endTimestamp, endTimestamp);
+  });
+
+  test(
+      'tracer finish sets given end timestamp to all children while finishing them',
+      () async {
+    final sut = fixture.getSut();
+
+    final childA = sut.startChild('operation-a', description: 'description');
+    final childB = sut.startChild('operation-b', description: 'description');
+    final endTimestamp = getUtcDateTime();
+
+    await sut.finish(endTimestamp: endTimestamp);
+    await childA.finish();
+    await childB.finish();
+
+    expect(childA.endTimestamp, endTimestamp);
+    expect(childB.endTimestamp, endTimestamp);
   });
 
   test('tracer finishes unfinished spans', () async {

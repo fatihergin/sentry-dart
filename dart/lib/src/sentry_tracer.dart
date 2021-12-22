@@ -38,18 +38,20 @@ class SentryTracer extends ISentrySpan {
   }
 
   @override
-  Future<void> finish({SpanStatus? status}) async {
+  Future<void> finish({SpanStatus? status, DateTime? endTimestamp}) async {
     _autoFinishAfterTimer?.cancel();
     _finishStatus = SentryTracerFinishStatus.finishing(status);
     if (!_rootSpan.finished &&
         (!_waitForChildren || _haveAllChildrenFinished())) {
       _rootSpan.status ??= status;
-      await _rootSpan.finish();
+      await _rootSpan.finish(endTimestamp: endTimestamp);
 
       // finish unfinished spans otherwise transaction gets dropped
       for (final span in _children) {
         if (!span.finished) {
-          await span.finish(status: SpanStatus.deadlineExceeded());
+          await span.finish(
+              status: SpanStatus.deadlineExceeded(),
+              endTimestamp: endTimestamp);
         }
       }
 

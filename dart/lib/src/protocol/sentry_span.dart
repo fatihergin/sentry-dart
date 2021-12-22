@@ -9,7 +9,7 @@ import '../utils.dart';
 
 class SentrySpan extends ISentrySpan {
   final SentrySpanContext _context;
-  DateTime? _timestamp;
+  DateTime? _endTimestamp;
   late final DateTime _startTimestamp;
   final Hub _hub;
 
@@ -38,7 +38,7 @@ class SentrySpan extends ISentrySpan {
   }
 
   @override
-  Future<void> finish({SpanStatus? status}) async {
+  Future<void> finish({SpanStatus? status, DateTime? endTimestamp}) async {
     if (finished) {
       return;
     }
@@ -46,14 +46,21 @@ class SentrySpan extends ISentrySpan {
     if (status != null) {
       _status = status;
     }
-    _timestamp = getUtcDateTime();
+
+    // if endTimestamp is before startTimestamp, set throwable
+    if (endTimestamp?.isBefore(_startTimestamp) ?? false) {
+      throwable = StateError('endTimestamp cannot be before startTimestamp');
+      _endTimestamp = getUtcDateTime();
+    } else {
+      _endTimestamp = endTimestamp?.toUtc() ?? getUtcDateTime();
+    }
 
     // associate error
     if (_throwable != null) {
       _hub.setSpanContext(_throwable, this, _tracer.name);
     }
     _finishedCallback?.call();
-    await super.finish(status: status);
+    await super.finish(status: status, endTimestamp: _endTimestamp);
   }
 
   @override
@@ -125,7 +132,7 @@ class SentrySpan extends ISentrySpan {
   DateTime get startTimestamp => _startTimestamp;
 
   @override
-  DateTime? get endTimestamp => _timestamp;
+  DateTime? get endTimestamp => _endTimestamp;
 
   @override
   SentrySpanContext get context => _context;
@@ -134,8 +141,9 @@ class SentrySpan extends ISentrySpan {
     final json = _context.toJson();
     json['start_timestamp'] =
         formatDateAsIso8601WithMillisPrecision(_startTimestamp);
-    if (_timestamp != null) {
-      json['timestamp'] = formatDateAsIso8601WithMillisPrecision(_timestamp!);
+    if (_endTimestamp != null) {
+      json['timestamp'] =
+          formatDateAsIso8601WithMillisPrecision(_endTimestamp!);
     }
     if (_data.isNotEmpty) {
       json['data'] = _data;
@@ -150,7 +158,7 @@ class SentrySpan extends ISentrySpan {
   }
 
   @override
-  bool get finished => _timestamp != null;
+  bool get finished => _endTimestamp != null;
 
   @override
   dynamic get throwable => _throwable;
